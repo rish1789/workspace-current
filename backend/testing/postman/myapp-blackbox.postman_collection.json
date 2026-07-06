@@ -1,0 +1,774 @@
+{
+  "info": {
+    "_postman_id": "8f2a1c40-6b1e-4e2a-9b0a-2f8e6c1a9d10",
+    "name": "myapp Black-Box API Tests",
+    "description": "Black-box functional tests for the myapp Trello-like backend. Treats the app purely as an HTTP API (no internal knowledge) and exercises the full Workspace -> Board -> Lane -> Card -> Checklist -> Comment -> Label lifecycle plus key access-control rules.\n\nRun order matters (Postman Runner / Collection Runner, top to bottom) since later requests depend on IDs and tokens captured by earlier ones.\n\nTwo tests are expected to FAIL against the current codebase on purpose, to surface known bugs:\n1. Login with wrong password returns 500 instead of 401.\n2. A non-author editing a comment returns 400 instead of 403.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('stamp')) {",
+          "    pm.collectionVariables.set('stamp', Date.now().toString());",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "stamp", "value": "" },
+    { "key": "tokenA", "value": "" },
+    { "key": "tokenB", "value": "" },
+    { "key": "userBId", "value": "" },
+    { "key": "workspaceId", "value": "" },
+    { "key": "boardId", "value": "" },
+    { "key": "laneId", "value": "" },
+    { "key": "cardId", "value": "" },
+    { "key": "checklistId", "value": "" },
+    { "key": "itemId", "value": "" },
+    { "key": "commentId", "value": "" },
+    { "key": "labelId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Register userA",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"userA_{{stamp}}\",\n  \"email\": \"usera_{{stamp}}@test.com\",\n  \"password\": \"Passw0rd!23\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api", "users", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('register userA -> 201', () => pm.response.to.have.status(201));",
+                  "pm.test('response has id', () => pm.expect(pm.response.json().id).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register userB",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"userB_{{stamp}}\",\n  \"email\": \"userb_{{stamp}}@test.com\",\n  \"password\": \"Passw0rd!23\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/users/register", "host": ["{{baseUrl}}"], "path": ["api", "users", "register"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('register userB -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('userBId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login userA",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usera_{{stamp}}@test.com\",\n  \"password\": \"Passw0rd!23\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login userA -> 200', () => pm.response.to.have.status(200));",
+                  "pm.test('returns a token', () => pm.expect(pm.response.json().token).to.exist);",
+                  "pm.collectionVariables.set('tokenA', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login userB",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"userb_{{stamp}}@test.com\",\n  \"password\": \"Passw0rd!23\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login userB -> 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('tokenB', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login with wrong password (KNOWN BUG: expect 401, currently 500)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"usera_{{stamp}}@test.com\",\n  \"password\": \"WrongPassword1!\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('wrong password -> 401 (correct contract; currently returns 500)', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Access Control Negative",
+      "item": [
+        {
+          "name": "Get workspaces without token -> 401/403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/workspaces/all", "host": ["{{baseUrl}}"], "path": ["api", "workspaces", "all"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('no token -> 401 or 403', () => pm.expect([401, 403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Workspace",
+      "item": [
+        {
+          "name": "Create workspace",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"workspaceName\": \"Workspace_{{stamp}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/workspaces", "host": ["{{baseUrl}}"], "path": ["api", "workspaces"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create workspace -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('workspaceId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get workspace (owner) -> 200",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": { "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}", "host": ["{{baseUrl}}"], "path": ["api", "workspaces", "{{workspaceId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('owner gets workspace -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        },
+        {
+          "name": "Get workspace (non-member userB) -> 403/404",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenB}}" }],
+            "url": { "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}", "host": ["{{baseUrl}}"], "path": ["api", "workspaces", "{{workspaceId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('non-member -> 403 or 404', () => pm.expect([403, 404]).to.include(pm.response.code));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add userB as workspace member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": {{userBId}},\n  \"role\": \"MEMBER\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "workspaces", "{{workspaceId}}", "members"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('add member -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Board",
+      "item": [
+        {
+          "name": "Create PRIVATE board",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workspaceId\": {{workspaceId}},\n  \"boardName\": \"Board_{{stamp}}\",\n  \"visibility\": \"PRIVATE\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/boards", "host": ["{{baseUrl}}"], "path": ["api", "boards"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create board -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('boardId', pm.response.json().boardId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "userB views PRIVATE board before board membership -> 403",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenB}}" }],
+            "url": { "raw": "{{baseUrl}}/api/boards/{{boardId}}", "host": ["{{baseUrl}}"], "path": ["api", "boards", "{{boardId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('workspace member, not board member -> 403', () => pm.response.to.have.status(403));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add userB as board member",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"userId\": {{userBId}},\n  \"role\": \"MEMBER\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/boards/{{boardId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "boards", "{{boardId}}", "members"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('add board member -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        },
+        {
+          "name": "userB views PRIVATE board after board membership -> 200",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenB}}" }],
+            "url": { "raw": "{{baseUrl}}/api/boards/{{boardId}}", "host": ["{{baseUrl}}"], "path": ["api", "boards", "{{boardId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('board member -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        },
+        {
+          "name": "userB (non-admin) deletes board -> 403",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenB}}" }],
+            "url": { "raw": "{{baseUrl}}/api/boards/{{boardId}}", "host": ["{{baseUrl}}"], "path": ["api", "boards", "{{boardId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test('non-admin delete board -> 403', () => pm.response.to.have.status(403));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Lane + Card",
+      "item": [
+        {
+          "name": "Create lane",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"boardId\": {{boardId}},\n  \"laneName\": \"To Do\",\n  \"position\": 0\n}" },
+            "url": { "raw": "{{baseUrl}}/api/lanes", "host": ["{{baseUrl}}"], "path": ["api", "lanes"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create lane -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('laneId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create card",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"laneId\": {{laneId}},\n  \"title\": \"Test Card\",\n  \"position\": 0\n}" },
+            "url": { "raw": "{{baseUrl}}/api/cards", "host": ["{{baseUrl}}"], "path": ["api", "cards"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create card -> 201', () => pm.response.to.have.status(201));",
+                  "pm.test('card has ticket id', () => pm.expect(pm.response.json().fullId).to.exist);",
+                  "pm.collectionVariables.set('cardId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update card title",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Updated Card Title\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/cards/{{cardId}}/title",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cards", "{{cardId}}", "title"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('update title -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        },
+        {
+          "name": "Archive card",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/cards/{{cardId}}/archive",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cards", "{{cardId}}", "archive"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('archive -> 200', () => pm.response.to.have.status(200));",
+                  "pm.test('archived flag true', () => pm.expect(pm.response.json().archived).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unarchive card",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/cards/{{cardId}}/unarchive",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cards", "{{cardId}}", "unarchive"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('unarchive -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Checklist",
+      "item": [
+        {
+          "name": "Create checklist",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"cardId\": {{cardId}},\n  \"title\": \"Checklist 1\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/checklists", "host": ["{{baseUrl}}"], "path": ["api", "checklists"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create checklist -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('checklistId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add checklist item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"First item\",\n  \"position\": 0\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/checklists/{{checklistId}}/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "checklists", "{{checklistId}}", "items"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('add item -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('itemId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Complete checklist item",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/checklists/items/{{itemId}}/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "checklists", "items", "{{itemId}}", "complete"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('complete item -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Comment",
+      "item": [
+        {
+          "name": "Add comment (userA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"cardId\": {{cardId}},\n  \"content\": \"Nice card!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/comments", "host": ["{{baseUrl}}"], "path": ["api", "comments"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('add comment -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('commentId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "userB edits userA's comment (KNOWN BUG: expect 403, currently 400)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenB}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"edited by someone else\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/comments/{{commentId}}/content",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "comments", "{{commentId}}", "content"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('non-author edit -> 403 (correct contract; currently returns 400)', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 - Label",
+      "item": [
+        {
+          "name": "Create label on board",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Urgent\",\n  \"color\": \"#FF0000\"\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/boards/{{boardId}}/labels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "boards", "{{boardId}}", "labels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create label -> 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('labelId', pm.response.json().labelId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Attach label to card",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{tokenA}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"labelId\": {{labelId}}\n}" },
+            "url": {
+              "raw": "{{baseUrl}}/api/cards/{{cardId}}/labels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cards", "{{cardId}}", "labels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('attach label -> 200', () => pm.response.to.have.status(200));"] }
+            }
+          ]
+        },
+        {
+          "name": "Get card labels",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/cards/{{cardId}}/labels",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cards", "{{cardId}}", "labels"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('get labels -> 200', () => pm.response.to.have.status(200));",
+                  "const labelId = parseInt(pm.collectionVariables.get('labelId'));",
+                  "pm.test('attached label is present', () => {",
+                  "  const found = pm.response.json().some((l) => l.labelId === labelId);",
+                  "  pm.expect(found).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 - Cleanup",
+      "item": [
+        {
+          "name": "Delete card",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": { "raw": "{{baseUrl}}/api/cards/{{cardId}}", "host": ["{{baseUrl}}"], "path": ["api", "cards", "{{cardId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('delete card -> 204', () => pm.response.to.have.status(204));"] } }
+          ]
+        },
+        {
+          "name": "Delete lane",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": { "raw": "{{baseUrl}}/api/lanes/{{laneId}}", "host": ["{{baseUrl}}"], "path": ["api", "lanes", "{{laneId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('delete lane -> 204', () => pm.response.to.have.status(204));"] } }
+          ]
+        },
+        {
+          "name": "Delete board",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": { "raw": "{{baseUrl}}/api/boards/{{boardId}}", "host": ["{{baseUrl}}"], "path": ["api", "boards", "{{boardId}}"] }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('delete board -> 204', () => pm.response.to.have.status(204));"] } }
+          ]
+        },
+        {
+          "name": "Delete workspace",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "workspaces", "{{workspaceId}}"]
+            }
+          },
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('delete workspace -> 204', () => pm.response.to.have.status(204));"] } }
+          ]
+        },
+        {
+          "name": "Get deleted workspace -> 404",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenA}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/workspaces/{{workspaceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "workspaces", "{{workspaceId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('deleted workspace -> 404', () => pm.response.to.have.status(404));"] }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

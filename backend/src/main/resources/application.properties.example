@@ -1,0 +1,26 @@
+spring.application.name=myapp
+
+# ─── DATABASE CONNECTION ─────────────────────────────────────────────────────
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/myapp_db
+spring.datasource.username=postgres
+spring.datasource.password=${DB_PASSWORD:changeme}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# ─── JPA / HIBERNATE ─────────────────────────────────────────────────────────
+
+# create-drop — creates tables on startup, drops on shutdown (development only)
+# change to "update" when you want data to persist between restarts
+spring.jpa.hibernate.ddl-auto=create-drop
+
+# show SQL queries in console — useful for debugging
+spring.jpa.show-sql=true
+
+# format SQL output for readability — disable in production
+spring.jpa.properties.hibernate.format_sql=true
+
+# disable open-in-view to avoid lazy loading issues in controllers
+spring.jpa.open-in-view=true
+
+jwt.secret=${JWT_SECRET:change-this-to-a-real-random-256-bit-secret}
+jwt.expiration=86400000

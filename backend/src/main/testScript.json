@@ -1,0 +1,782 @@
+{
+  "info": {
+    "name": "WorkSpace API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "userId",       "value": "" },
+    { "key": "userId2",      "value": "" },
+    { "key": "workspaceId",  "value": "" },
+    { "key": "boardId",      "value": "" },
+    { "key": "labelId",      "value": "" },
+    { "key": "laneId",       "value": "" },
+    { "key": "cardId",       "value": "" },
+    { "key": "commentId",    "value": "" },
+    { "key": "checklistId",  "value": "" },
+    { "key": "itemId",       "value": "" }
+  ],
+  "item": [
+
+    {
+      "name": "01 - Users",
+      "item": [
+        {
+          "name": "Create User 1",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('userId', pm.response.json().userId);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"username\":\"Rishabh\",\"email\":\"rishabh@example.com\",\"password\":\"Pass@1234\"}" }
+          }
+        },
+        {
+          "name": "Create User 2",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('userId2', pm.response.json().userId);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"username\":\"Rohan\",\"email\":\"rohan@example.com\",\"password\":\"Pass@1234\"}" }
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has userId', () => pm.expect(pm.response.json()).to.have.property('userId'));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Get User By Email",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/users/email/rishabh@example.com"
+          }
+        },
+        {
+          "name": "Update Username",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/{{userId}}/username",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"username\":\"Rishabh Yadav\"}" }
+          }
+        },
+        {
+          "name": "Update Email",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/users/{{userId}}/email",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"rishabh.yadav@example.com\"}" }
+          }
+        },
+        {
+          "name": "Validate Login - Valid",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Login valid', () => pm.expect(pm.response.json()).to.be.true);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/users/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"rishabh.yadav@example.com\",\"password\":\"Pass@1234\"}" }
+          }
+        },
+        {
+          "name": "Validate Login - Invalid",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Login invalid', () => pm.expect(pm.response.json()).to.be.false);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/users/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"email\":\"rishabh.yadav@example.com\",\"password\":\"WrongPass@1\"}" }
+          }
+        },
+        {
+          "name": "Create Duplicate User - Expect 400",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 400', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"username\":\"Rishabh\",\"email\":\"rishabh.yadav@example.com\",\"password\":\"Pass@1234\"}" }
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "02 - Workspaces",
+      "item": [
+        {
+          "name": "Create Workspace",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('workspaceId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/workspaces",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"workspaceName\":\"My Workspace\",\"createdBy\":{{userId}}}" }
+          }
+        },
+        {
+          "name": "Get Workspace By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/workspaces/{{workspaceId}}"
+          }
+        },
+        {
+          "name": "Update Workspace Name",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/workspaces/{{workspaceId}}/name",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"workspaceName\":\"Updated Workspace\"}" }
+          }
+        },
+        {
+          "name": "Update Workspace Description",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/workspaces/{{workspaceId}}/description",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"description\":\"This is my workspace\"}" }
+          }
+        },
+        {
+          "name": "Add Workspace Member",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"userId\":{{userId2}},\"role\":\"MEMBER\"}" }
+          }
+        },
+        {
+          "name": "Get Workspace Members",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Has members', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members"
+          }
+        },
+        {
+          "name": "Get Member Role",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId2}}/role"
+          }
+        },
+        {
+          "name": "Update Member Role",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId2}}/role",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"role\":\"ADMIN\"}" }
+          }
+        },
+        {
+          "name": "Remove Workspace Member",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members/{{userId2}}"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "03 - Boards",
+      "item": [
+        {
+          "name": "Create Board",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('boardId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/boards",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"workspaceId\":{{workspaceId}},\"boardName\":\"My Board\",\"visibility\":\"PRIVATE\",\"createdBy\":{{userId}}}" }
+          }
+        },
+        {
+          "name": "Get Board By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}"
+          }
+        },
+        {
+          "name": "Get Boards By Workspace",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/boards/workspace/{{workspaceId}}"
+          }
+        },
+        {
+          "name": "Update Board Name",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/boards/{{boardId}}/name",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"boardName\":\"Updated Board\"}" }
+          }
+        },
+        {
+          "name": "Update Board Visibility",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/boards/{{boardId}}/visibility",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"visibility\":\"PUBLIC\"}" }
+          }
+        },
+        {
+          "name": "Create Label",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('labelId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/boards/{{boardId}}/labels",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"name\":\"Bug\",\"color\":\"#FF0000\"}" }
+          }
+        },
+        {
+          "name": "Get Labels By Board",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}/labels"
+          }
+        },
+        {
+          "name": "Add Board Member",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/boards/{{boardId}}/members",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"userId\":{{userId2}},\"role\":\"MEMBER\"}" }
+          }
+        },
+        {
+          "name": "Get Board Members",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}/members"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "04 - Lanes",
+      "item": [
+        {
+          "name": "Create Lane - To Do",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('laneId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/lanes",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"boardId\":{{boardId}},\"laneName\":\"To Do\",\"position\":0}" }
+          }
+        },
+        {
+          "name": "Create Lane - In Progress",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/lanes",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"boardId\":{{boardId}},\"laneName\":\"In Progress\",\"position\":1}" }
+          }
+        },
+        {
+          "name": "Create Lane - Done",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/lanes",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"boardId\":{{boardId}},\"laneName\":\"Done\",\"position\":2}" }
+          }
+        },
+        {
+          "name": "Get Lane By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/lanes/{{laneId}}"
+          }
+        },
+        {
+          "name": "Get Lanes By Board",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));",
+            "pm.test('Is array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/lanes/board/{{boardId}}"
+          }
+        },
+        {
+          "name": "Rename Lane",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/lanes/{{laneId}}/name",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"laneName\":\"Backlog\"}" }
+          }
+        },
+        {
+          "name": "Archive Lane",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/lanes/{{laneId}}/archive"
+          }
+        },
+        {
+          "name": "Unarchive Lane",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/lanes/{{laneId}}/unarchive"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "05 - Cards",
+      "item": [
+        {
+          "name": "Create Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('cardId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/cards",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"laneId\":{{laneId}},\"title\":\"My First Card\",\"position\":0,\"createdBy\":{{userId}}}" }
+          }
+        },
+        {
+          "name": "Get Card By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/cards/{{cardId}}"
+          }
+        },
+        {
+          "name": "Get Cards By Lane",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/cards/lane/{{laneId}}"
+          }
+        },
+        {
+          "name": "Update Card Title",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/cards/{{cardId}}/title",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"title\":\"Updated Card Title\"}" }
+          }
+        },
+        {
+          "name": "Update Card Description",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/cards/{{cardId}}/description",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"description\":\"This is a card description\"}" }
+          }
+        },
+        {
+          "name": "Set Due Date",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/cards/{{cardId}}/due-date",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"date\":\"2026-12-31\"}" }
+          }
+        },
+        {
+          "name": "Archive Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/cards/{{cardId}}/archive"
+          }
+        },
+        {
+          "name": "Unarchive Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/cards/{{cardId}}/unarchive"
+          }
+        },
+        {
+          "name": "Assign Member to Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/cards/{{cardId}}/members",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"userId\":{{userId2}}}" }
+          }
+        },
+        {
+          "name": "Get Card Members",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/cards/{{cardId}}/members"
+          }
+        },
+        {
+          "name": "Attach Label to Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/cards/{{cardId}}/labels",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"labelId\":{{labelId}}}" }
+          }
+        },
+        {
+          "name": "Get Card Labels",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/cards/{{cardId}}/labels"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "06 - Comments",
+      "item": [
+        {
+          "name": "Add Comment",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('commentId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/comments",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"cardId\":{{cardId}},\"userId\":{{userId}},\"content\":\"This is a comment\"}" }
+          }
+        },
+        {
+          "name": "Get Comment By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/comments/{{commentId}}"
+          }
+        },
+        {
+          "name": "Get Comments By Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/comments/card/{{cardId}}"
+          }
+        },
+        {
+          "name": "Edit Comment",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/comments/{{commentId}}/content",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"content\":\"Updated comment content\"}" }
+          }
+        },
+        {
+          "name": "Delete Comment",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/comments/{{commentId}}"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "07 - Checklists",
+      "item": [
+        {
+          "name": "Create Checklist",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('checklistId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/checklists",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"cardId\":{{cardId}},\"title\":\"My Checklist\"}" }
+          }
+        },
+        {
+          "name": "Get Checklist By ID",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/checklists/{{checklistId}}"
+          }
+        },
+        {
+          "name": "Get Checklists By Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/checklists/card/{{cardId}}"
+          }
+        },
+        {
+          "name": "Rename Checklist",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/checklists/{{checklistId}}/title",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"title\":\"Updated Checklist\"}" }
+          }
+        },
+        {
+          "name": "Add Checklist Item",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('itemId', pm.response.json().id);"
+          ]}}],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/checklists/{{checklistId}}/items",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"content\":\"First checklist item\",\"position\":0}" }
+          }
+        },
+        {
+          "name": "Get Items By Checklist",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/checklists/{{checklistId}}/items"
+          }
+        },
+        {
+          "name": "Update Item Content",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/checklists/items/{{itemId}}/content",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\"content\":\"Updated item content\"}" }
+          }
+        },
+        {
+          "name": "Complete Item",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/checklists/items/{{itemId}}/complete"
+          }
+        },
+        {
+          "name": "Uncomplete Item",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', () => pm.response.to.have.status(200));"
+          ]}}],
+          "request": {
+            "method": "PATCH", "url": "{{baseUrl}}/checklists/items/{{itemId}}/uncomplete"
+          }
+        },
+        {
+          "name": "Delete Item",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/checklists/items/{{itemId}}"
+          }
+        },
+        {
+          "name": "Delete Checklist",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/checklists/{{checklistId}}"
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "08 - Cleanup",
+      "item": [
+        {
+          "name": "Delete Card",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/cards/{{cardId}}"
+          }
+        },
+        {
+          "name": "Delete Lane",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/lanes/{{laneId}}"
+          }
+        },
+        {
+          "name": "Delete Label",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/boards/labels/{{labelId}}"
+          }
+        },
+        {
+          "name": "Delete Board",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/boards/{{boardId}}"
+          }
+        },
+        {
+          "name": "Delete Workspace",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/workspaces/{{workspaceId}}"
+          }
+        },
+        {
+          "name": "Delete User 2",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/users/{{userId2}}"
+          }
+        },
+        {
+          "name": "Delete User 1",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 204', () => pm.response.to.have.status(204));"
+          ]}}],
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/users/{{userId}}"
+          }
+        }
+      ]
+    }
+
+  ]
+}
