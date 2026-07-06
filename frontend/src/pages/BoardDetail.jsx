@@ -284,7 +284,7 @@ function Lane({ lane, cards, loading, error, onCardClick, onOpenSettings, onCard
               <circle cx="11" cy="12" r="1.3" />
             </svg>
           </button>
-          <h3 className="text-sm font-semibold tracking-wide text-slate-600 [font-variant:small-caps]">
+          <h3 className="text-sm font-semibold text-ink">
             {lane.name}
           </h3>
           {lane.archived && <span className="badge-gray">Archived</span>}
@@ -727,7 +727,7 @@ function BoardDetail() {
             </div>
           )}
           {activeDragItem?.type === 'lane' && (
-            <div className="w-[300px] rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-sm font-semibold tracking-wide text-slate-600 shadow-xl [font-variant:small-caps]">
+            <div className="w-[300px] rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-sm font-semibold text-ink shadow-xl">
               {activeDragItem.lane.name}
             </div>
           )}

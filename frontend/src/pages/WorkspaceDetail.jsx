@@ -160,9 +160,20 @@ function WorkspaceDetail() {
                   <div
                     key={board.boardId}
                     onClick={() => navigate(`/boards/${board.boardId}`)}
-                    className="tile"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(`/boards/${board.boardId}`)
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                   >
-                    <h3 className="text-base font-semibold text-ink">{board.boardName}</h3>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-sm font-semibold text-accent">
+                      {board.boardName?.[0]?.toUpperCase() || 'B'}
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold text-ink">{board.boardName}</h3>
                     <span className={`mt-3 inline-block ${visibilityBadge(board.visibility)}`}>
                       {board.visibility}
                     </span>

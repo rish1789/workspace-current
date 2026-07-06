@@ -2,13 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import Modal from '../components/Modal'
-import { getWorkspaceMembers, getWorkspaceStats } from '../api/workspaceService'
+import { getWorkspaceStats } from '../api/workspaceService'
 
 function Workspaces() {
   const navigate = useNavigate()
   const [workspaces, setWorkspaces] = useState([])
   const [stats, setStats] = useState({})
-  const [uniqueMemberCount, setUniqueMemberCount] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -29,12 +28,6 @@ function Workspaces() {
           .then((s) => setStats((prev) => ({ ...prev, [workspace.id]: s })))
           .catch(() => {})
       })
-
-      const memberLists = await Promise.all(
-        response.data.map((workspace) => getWorkspaceMembers(workspace.id).catch(() => []))
-      )
-      const uniqueIds = new Set(memberLists.flat().map((m) => m.userId))
-      setUniqueMemberCount(uniqueIds.size)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load workspaces')
     } finally {
@@ -72,8 +65,6 @@ function Workspaces() {
     localStorage.removeItem('token')
     navigate('/login')
   }
-
-  const totalBoards = Object.values(stats).reduce((sum, s) => sum + (s?.boardCount || 0), 0)
 
   const topWorkspaces = [...workspaces]
     .map((w) => ({ ...w, boardCount: stats[w.id]?.boardCount ?? -1 }))
@@ -133,7 +124,15 @@ function Workspaces() {
                   <div
                     key={workspace.id}
                     onClick={() => navigate(`/workspaces/${workspace.id}`)}
-                    className="tile"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        navigate(`/workspaces/${workspace.id}`)
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                   >
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-sm font-semibold text-accent">
                       {workspace.name?.[0]?.toUpperCase() || 'W'}
@@ -162,26 +161,6 @@ function Workspaces() {
         {workspaces.length > 0 && (
           <aside className="hidden w-72 flex-none space-y-4 lg:block">
             <div className="surface-card p-4">
-              <h3 className="mb-3 text-sm font-semibold text-ink">Overview</h3>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-lg font-semibold text-ink">{workspaces.length}</p>
-                  <p className="text-[11px] text-muted">Workspaces</p>
-                </div>
-                <div>
-                  <p className="text-lg font-semibold text-ink">{totalBoards}</p>
-                  <p className="text-[11px] text-muted">Boards</p>
-                </div>
-                <div>
-                  <p className="text-lg font-semibold text-ink">
-                    {uniqueMemberCount ?? '—'}
-                  </p>
-                  <p className="text-[11px] text-muted">People</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-card p-4">
               <h3 className="mb-3 text-sm font-semibold text-ink">Top workspaces</h3>
               {topWorkspaces.length === 0 ? (
                 <p className="text-sm text-muted">Nothing to rank yet.</p>
@@ -191,7 +170,15 @@ function Workspaces() {
                     <li
                       key={w.id}
                       onClick={() => navigate(`/workspaces/${w.id}`)}
-                      className="flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm transition hover:bg-slate-50"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          navigate(`/workspaces/${w.id}`)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      className="flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-sm transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                     >
                       <span className="flex items-center gap-2 truncate text-ink">
                         <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-accent-soft text-[10px] font-semibold text-accent">
